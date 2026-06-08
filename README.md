@@ -3,7 +3,26 @@ AI-powered software compatibility and security advisor for version recommendatio
 
 ## Features
 
-- Software version recommendation
-- Dependency compatibility checking
-- CVE vulnerability analysis
+- Software compatibility analysis
+- Dependency recommendation
+- CVE vulnerability detection
+- Security risk assessment
 - AI-powered explanations
+
+## Tech Stack
+
+Frontend:
+- Next.js
+
+Backend:
+- FastAPI
+
+Database:
+- PostgreSQL
+
+Security Data:
+- NVD API
+- GitHub Security Advisories
+
+AI:
+- OpenAI API
