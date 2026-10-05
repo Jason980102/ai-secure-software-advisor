@@ -21,7 +21,7 @@ persistence are planned; they are not implemented.
 103 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
 The first scanner MVP has been merged into `main`, and its CI passed.
-Optional direct-constraint checks are the next feature; commit and merge them through a PR.
+The scanner web interface supports five languages and defaults to English.
 
 ## Quick start
 
@@ -262,7 +262,7 @@ complete installable environment. Candidate recommendations remain independent;
 conflicts are reported at plan level rather than automatically choosing alternatives.
 
 Python and OS markers use supplied target context; missing context, CPU/OS
-release markers, extras and URL dependencies are unresolved. Host defaults are
+release markers and URL dependencies are unresolved. Explicit input extras are preserved and used to evaluate `extra` markers; extras requested by another package remain unresolved. Host defaults are
 not used for referenced marker variables. Missing Requires-Dist is conservatively
 unknown; an explicit empty list is accepted. PyPI project JSON may not reflect
 all wheel-specific dependency metadata. Full resolution is a future milestone.
@@ -286,3 +286,7 @@ hide prior results to avoid mistaking an older result for the current request.
 File input reads locally; only requirements text and target options are sent.
 This is a local website, not a public deployment. AI explanations are still absent.
 Keep frontend/ next to backend/ when distributing this repo.
+
+### Explicit extras
+
+Use `requests[socks]==2.33.0` to enable optional direct requirements. Duplicate pins merge normalized extras. Results include an `extras` list. Unselected optional requirements are skipped. This does not propagate extras through the dependency graph or validate that an extra exists in package metadata.

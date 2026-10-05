@@ -31,7 +31,7 @@ def test_target_markers_do_not_use_host():
 
 @pytest.mark.parametrize('requirement',[
  'b<2; python_version >= "3.12"','b<2; sys_platform == "win32"',
- 'b<2; platform_machine == "AMD64"','b<2; extra == "test"'])
+ 'b<2; platform_machine == "AMD64"'])
 def test_missing_context_is_unknown(requirement):
     assert run([requirement],None,None).checks[0].status=='unknown'
 

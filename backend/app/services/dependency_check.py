@@ -34,7 +34,7 @@ def target_environment(python, platform):
         windows=platform.startswith('win_')
         env.update(sys_platform='win32' if windows else 'linux',os_name='nt' if windows else 'posix',
                    platform_system='Windows' if windows else 'Linux')
-    # CPU spelling, extras and OS release/version are intentionally unresolved.
+    # CPU spelling and OS release/version are intentionally unresolved.
     return env
 
 
@@ -47,7 +47,9 @@ def check_dependencies(results, python=None, platform=None, metadata_lookup=None
     known_variables={'python_version','python_full_version','implementation_name','implementation_version',
         'platform_python_implementation','sys_platform','os_name','platform_system','platform_machine',
         'platform_release','platform_version','extra','extras','dependency_groups'}
+    selected_extras = {r.package: r.extras for r in results}
     for name,version in plan.items():
+        marker_env = dict(env, extra="")
         try:
             dependencies=lookup(name,version)
         except DependencyMetadataError as exc:
@@ -65,11 +67,12 @@ def check_dependencies(results, python=None, platform=None, metadata_lookup=None
             if requirement.marker:
                 expression=re.sub(r'"[^"]*"|\x27[^\x27]*\x27','',str(requirement.marker))
                 referenced=set(re.findall(r'\b[a-z_]+\b',expression)) & known_variables
-                if not referenced <= env.keys():
-                    checks.append(DependencyConstraint(**entry,status='unknown',reason='Marker needs target context or extras not available to this check'))
+                if not referenced <= marker_env.keys():
+                    checks.append(DependencyConstraint(**entry,status='unknown',reason='Marker needs target context not available to this check'))
                     continue
                 try:
-                    applies=requirement.marker.evaluate(environment=env)
+                    applies=any(requirement.marker.evaluate(environment=dict(marker_env, extra=extra))
+                                for extra in ["", *selected_extras[name]])
                 except (ValueError,KeyError):
                     checks.append(DependencyConstraint(**entry,status='unknown',reason='Cannot evaluate environment marker'))
                     continue

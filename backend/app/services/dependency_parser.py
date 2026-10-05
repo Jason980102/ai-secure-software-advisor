@@ -10,6 +10,7 @@ from packaging.version import InvalidVersion, Version
 class Dependency:
     package: str
     version: str
+    extras: tuple[str, ...] = ()
 
 
 def parse_pinned_requirements(text: str) -> list[Dependency]:
@@ -32,7 +33,10 @@ def parse_pinned_requirements(text: str) -> list[Dependency]:
         name = canonicalize_name(requirement.name)
         if name in dependencies and dependencies[name].version != version:
             raise ValueError(f"Line {number}: conflicting versions for {name}")
-        dependencies[name] = Dependency(name, version)
+        extras = {canonicalize_name(extra) for extra in requirement.extras}
+        if name in dependencies:
+            extras.update(dependencies[name].extras)
+        dependencies[name] = Dependency(name, version, tuple(sorted(extras)))
     if not dependencies:
         raise ValueError("No pinned packages found")
     if len(dependencies) > 100:
