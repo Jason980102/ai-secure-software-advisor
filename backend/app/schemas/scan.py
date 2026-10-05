@@ -50,6 +50,7 @@ class UpgradeRecommendation(BaseModel):
 class PackageScanResult(BaseModel):
     package: str
     installed_version: str
+    extras: list[str] = Field(default_factory=list)
     vulnerabilities: list[VulnerabilityFinding]
     upgrade_recommendation: UpgradeRecommendation
 
