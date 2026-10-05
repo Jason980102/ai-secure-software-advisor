@@ -57,7 +57,7 @@ from app.services.osv_service import OSVServiceError
 @router.post("", response_model=ScanReport)
 def batch_scan(request: ScanRequest) -> ScanReport:
     try:
-        return scan_requirements(request.requirements, request.target_python, request.target_platform)
+        return scan_requirements(request.requirements, request.target_python, request.target_platform, request.check_dependencies)
     except OSVServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:

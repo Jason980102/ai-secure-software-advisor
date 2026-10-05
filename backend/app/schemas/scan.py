@@ -6,6 +6,7 @@ from app.schemas.vulnerability import VulnerabilityFinding
 TargetPlatform = Literal["win_amd64", "win_arm64", "manylinux_2_17_x86_64", "manylinux_2_17_aarch64"]
 
 class ScanRequest(BaseModel):
+    check_dependencies: bool = False
     requirements: str = Field(min_length=1, max_length=100_000)
 
     target_python: str | None = Field(default=None, description="Target Python version, e.g. 3.12.0. Omit to skip Python compatibility verification.")
@@ -52,7 +53,25 @@ class PackageScanResult(BaseModel):
     vulnerabilities: list[VulnerabilityFinding]
     upgrade_recommendation: UpgradeRecommendation
 
+class DependencyConstraint(BaseModel):
+    package: str
+    selected_version: str
+    requirement: str | None = None
+    dependency: str | None = None
+    dependency_version: str | None = None
+    status: Literal["satisfied", "conflict", "missing", "unknown", "skipped"]
+    reason: str
+
+class DependencyCheckReport(BaseModel):
+    status: Literal["conflicts_found", "incomplete", "no_direct_conflicts"]
+    selected_versions: dict[str, str]
+    conflict_count: int
+    unresolved_count: int
+    checks: list[DependencyConstraint]
+    scope: str = "Direct constraints among supplied packages only; not full dependency resolution or installation verification."
+
 class ScanReport(BaseModel):
+    dependency_check: DependencyCheckReport | None = None
     total_packages: int
     vulnerable_packages: int
     total_vulnerabilities: int
