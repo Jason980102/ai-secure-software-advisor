@@ -62,7 +62,7 @@ Flask 的 major_upgrade=true 提醒這是跨主要版本的升級候選。
 
 ## 4:00–5:00：可信度與限制
 
-展示 GitHub Actions 的 Python 3.11、3.12 通過紀錄，並說明本機有 88 個
+展示 GitHub Actions 的 Python 3.11、3.12 通過紀錄，並說明本機有 102 個
 離線測試，涵蓋外部服務失敗與相容性判斷。CI 成功不代表每次即時查詢
 都成功，也不代表升級後的應用程式已通過測試。
 
@@ -84,14 +84,20 @@ Flask 的 major_upgrade=true 提醒這是跨主要版本的升級候選。
 ## 保存與 CI
 
 ```powershell
-git add README.md docs examples
-git commit -m "docs: document scanner MVP and demo workflow"
-git push origin develop
+git add README.md docs backend
+git commit -m "feat: check direct dependency constraints"
+git push -u origin feature/direct-dependency-check
 ```
 
 到 GitHub Actions 確認這次執行結果。展示時以實際綠色通過紀錄為準。
 
-目前 MVP 在 develop，尚未合併到 main。文件推送且 CI 通過後，到 GitHub
-Pull requests → New pull request，設定 base=main、compare=develop。
-查看完整差異、確認 PR 測試通過，再合併。develop 的綠色勾勾不代表
-main 已有新功能。合併後再確認 main 的 CI；這份指南不會自動合併分支。
+第一版 MVP 已合併到 main，main 的 CI 已通過。後續功能在 feature
+分支提交，推送後建立到 main 的 PR；查看差異與 CI，再合併。
+
+## 新增：直接依賴條件檢查
+
+在請求加入 `"check_dependencies": true`。展示頂層 dependency_check，
+說明 selected_versions 是所有套件採用候選後的計畫。三套件範例未提供
+Flask、Requests 的所有依賴，通常會是 incomplete；這是未完整解析，
+不是已證明有衝突。conflict 才表示某個選定版本違反直接依賴條件。
+unknown 表示資料或環境條件不足。這版不會安裝套件或做完整 resolver。

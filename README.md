@@ -6,7 +6,7 @@ finds upgrade candidates verified against OSV, PyPI metadata and target wheel ta
 **Current scope:** a FastAPI backend MVP. AI-generated explanations, a web
 frontend and persistence are planned; they are not implemented.
 
-[![Backend tests](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml/badge.svg?branch=develop)](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml)
+[![Backend tests](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml)
 
 ## What it does
 
@@ -18,10 +18,10 @@ frontend and persistence are planned; they are not implemented.
 - Re-queries OSV before returning an upgrade candidate.
 - Returns structured findings and an auditable candidate-check history.
 
-88 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
+102 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
-The current MVP is on `develop`; it has not yet been merged into `main`.
-To try it after cloning, run `git switch develop` before following the quick start.
+The first scanner MVP has been merged into `main`, and its CI passed.
+Optional direct-constraint checks are the next feature; commit and merge them through a PR.
 
 ## Quick start
 
@@ -212,7 +212,7 @@ examples/                  Request, input and live report snapshot
 
 This scanner checks direct pins supplied by the user. It does not resolve a
 dependency graph, discover installed packages, download/build distributions,
-verify cross-package constraints or run application tests. Matching wheel tags
+fully resolve cross-package dependencies or run application tests. Matching wheel tags
 and no known OSV findings do not prove a working or fully secure installation.
 Missing fix boundaries remain manual review. Exhausting the candidate budget
 does not prove no suitable release exists. Scans run sequentially with HTTP
@@ -220,7 +220,7 @@ timeouts but no whole-scan deadline.
 
 Next milestones:
 
-1. Cross-package dependency constraint checks with explicit target context.
+1. Expand direct-constraint checks toward transitive dependency resolution.
 2. Human-readable remediation summaries; later, grounded AI explanations.
 3. Optional interface and scan history after the core checks are reliable.
 
@@ -241,3 +241,33 @@ or public deployment is currently claimed.
 - [PyPI JSON API](https://docs.pypi.org/api/json/)
 - [PyPI Index API](https://docs.pypi.org/api/index-api/)
 - [Packaging tags](https://packaging.pypa.io/en/stable/tags.html)
+
+
+## Optional direct dependency constraint check
+
+Add `"check_dependencies": true` to the existing scan request. The default is
+false, adding no metadata requests. When enabled, the selected plan uses each
+accepted candidate version and keeps installed versions for all other packages.
+It reads Requires-Dist metadata once per selected package (at most 100 extra
+requests, sequential, 10-second timeout each) and compares constraints against
+other selected input packages. No dependencies are installed or recursively resolved.
+
+`dependency_check` includes selected_versions, conflict_count, unresolved_count
+and per-requirement checks. Report statuses: conflicts_found, incomplete,
+no_direct_conflicts. Constraint statuses: satisfied, conflict, missing, unknown,
+skipped. Missing means outside the supplied package set, not missing installation.
+Unknown metadata/context does not count as success. A metadata error preserves
+the vulnerability report and appears as an unknown check. Even no_direct_conflicts
+is limited to the supplied pins and available project metadata, not proof of a
+complete installable environment. Candidate recommendations remain independent;
+conflicts are reported at plan level rather than automatically choosing alternatives.
+
+Python and OS markers use supplied target context; missing context, CPU/OS
+release markers, extras and URL dependencies are unresolved. Host defaults are
+not used for referenced marker variables. Missing Requires-Dist is conservatively
+unknown; an explicit empty list is accepted. PyPI project JSON may not reflect
+all wheel-specific dependency metadata. Full resolution is a future milestone.
+
+Example: A requires B<2, but the selected plan has B==2.5 → conflicts_found.
+The three-package demo normally reports incomplete because Flask and Requests
+depend on additional packages not supplied in that input.
