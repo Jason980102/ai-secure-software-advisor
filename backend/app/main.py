@@ -1,4 +1,7 @@
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.scan import router as scan_router
 
@@ -21,3 +24,10 @@ def health_check():
         "status": "healthy",
         "service": "ai-secure-software-advisor",
     }
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR), name="frontend-assets")
+
+@app.get("/", include_in_schema=False)
+def frontend_home():
+    return FileResponse(FRONTEND_DIR / "index.html")
