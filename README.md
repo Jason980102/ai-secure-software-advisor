@@ -244,3 +244,31 @@ No secrets or live OSV/PyPI calls are required in tests.
 
 References: https://docs.pypi.org/api/json/ and
 https://docs.github.com/en/actions/tutorials/build-and-test-code/python.
+
+
+## Implemented: CPython wheel compatibility
+
+Optional `target_platform` requires `target_python`. Supported targets:
+`win_amd64`, `win_arm64`, `manylinux_2_17_x86_64`,
+`manylinux_2_17_aarch64`. Linux targets explicitly mean glibc 2.17 and the
+specified CPU; do not use them for Alpine/musl. Conventional CPython only,
+not PyPy or free-threaded CPython.
+
+```json
+{"requirements":"requests==2.19.0\nflask==2.0.0\nnumpy==1.21.0","target_python":"3.12.0","target_platform":"win_amd64"}
+```
+
+The same non-yanked wheel must match Python/ABI/platform tags and its
+Requires-Python metadata. Results add `wheel_compatible` and
+`compatible_wheels`. `no_compatible_wheel` rejects a candidate; malformed
+wheel metadata is `wheel_unknown`. Source-only releases require manual review.
+Omitting target_platform preserves metadata-only checks and reports
+wheel_compatible=null. No package is downloaded, installed or built.
+Matching tags do not prove dependency resolution or runtime compatibility.
+Only existing fix-boundary candidates are explored (maximum five); no matching
+candidate is not proof that no compatible newer version exists.
+
+CI now uses ubuntu-24.04 and checkout/setup-python v7. It must run on GitHub
+after pushing these changes; local tests: 76 passed.
+References: https://packaging.pypa.io/en/stable/tags.html,
+https://github.com/actions/checkout, https://github.com/actions/setup-python.

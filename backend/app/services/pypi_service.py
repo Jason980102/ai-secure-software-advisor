@@ -5,11 +5,13 @@ from packaging.version import Version
 from app.schemas.scan import ReleaseValidation
 
 
+from app.services.wheels import compatible_wheels
+
 class PyPIServiceError(Exception):
     pass
 
 
-def check_release(package: str, version: str, target_python: str | None) -> ReleaseValidation:
+def check_release(package: str, version: str, target_python: str | None, target_platform: str | None = None) -> ReleaseValidation:
     url = f"https://pypi.org/pypi/{quote(package, safe='')}/{quote(version, safe='')}/json"
     try:
         response = httpx.get(url, timeout=10.0)
@@ -30,6 +32,14 @@ def check_release(package: str, version: str, target_python: str | None) -> Rele
         if not active:
             return ReleaseValidation(version=version, status="yanked")
         requirements = sorted({f["requires_python"] for f in active if isinstance(f.get("requires_python"), str) and f["requires_python"]})
+        if target_platform is not None:
+            if target_python is None:
+                raise ValueError("Platform checks require target_python")
+            matches, unknown = compatible_wheels(active, target_python, target_platform)
+            return ReleaseValidation(version=version,
+                status="available" if matches else ("wheel_unknown" if unknown else "no_compatible_wheel"),
+                requires_python=requirements, python_compatible=True if matches else None,
+                wheel_compatible=True if matches else (None if unknown else False), compatible_wheels=matches)
         if target_python is None:
             return ReleaseValidation(version=version, status="available", requires_python=requirements,
                 python_compatible=None)
