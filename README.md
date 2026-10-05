@@ -3,8 +3,8 @@
 A Python dependency security scanner that reports known vulnerabilities and
 finds upgrade candidates verified against OSV, PyPI metadata and target wheel tags.
 
-**Current scope:** a FastAPI backend MVP. AI-generated explanations, a web
-frontend and persistence are planned; they are not implemented.
+**Current scope:** a FastAPI backend MVP. The scanner now includes a local web interface. AI-generated explanations and
+persistence are planned; they are not implemented.
 
 [![Backend tests](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml)
 
@@ -18,7 +18,7 @@ frontend and persistence are planned; they are not implemented.
 - Re-queries OSV before returning an upgrade candidate.
 - Returns structured findings and an auditable candidate-check history.
 
-102 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
+103 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
 The first scanner MVP has been merged into `main`, and its CI passed.
 Optional direct-constraint checks are the next feature; commit and merge them through a PR.
@@ -48,8 +48,7 @@ python3 -m venv .venv
 .venv/bin/python -m uvicorn app.main:app --app-dir backend --reload
 ```
 
-Open [Swagger UI](http://127.0.0.1:8000/docs). The root URL `/` has no route and
-returns 404. The health endpoint is [GET /health](http://127.0.0.1:8000/health).
+Open [scanner website](http://127.0.0.1:8000/) or [Swagger UI](http://127.0.0.1:8000/docs). The root URL `/` opens the scanner website. The health endpoint is [GET /health](http://127.0.0.1:8000/health).
 
 ## Run a scan
 
@@ -222,7 +221,7 @@ Next milestones:
 
 1. Expand direct-constraint checks toward transitive dependency resolution.
 2. Human-readable remediation summaries; later, grounded AI explanations.
-3. Optional interface and scan history after the core checks are reliable.
+3. Scan history after the core checks are reliable.
 
 See the [Chinese demo guide](docs/DEMO.zh-TW.md) for a presentation walkthrough.
 
@@ -271,3 +270,19 @@ all wheel-specific dependency metadata. Full resolution is a future milestone.
 Example: A requires B<2, but the selected plan has B==2.5 → conflicts_found.
 The three-package demo normally reports incomplete because Flask and Requests
 depend on additional packages not supplied in that input.
+
+
+## Web interface
+
+The frontend lives in frontend/ and is served by the same FastAPI process.
+Open http://127.0.0.1:8000/ after starting the backend. No Node installation,
+frontend build, CORS configuration or second service is needed.
+
+Paste pinned requirements, upload a text file or load the demo. Select target
+Python/platform and optional dependency checks, then scan. Results show original
+package counts, findings, upgrade candidates, verification evidence and direct
+dependency details. Download JSON exports the successful report. Failed scans
+hide prior results to avoid mistaking an older result for the current request.
+File input reads locally; only requirements text and target options are sent.
+This is a local website, not a public deployment. AI explanations are still absent.
+Keep frontend/ next to backend/ when distributing this repo.
