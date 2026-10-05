@@ -1,300 +1,243 @@
 # AI Secure Software Advisor
 
-An AI-powered software dependency and security analysis platform that identifies known vulnerabilities, evaluates dependency risks, and recommends safer software versions with developer-friendly explanations.
+A Python dependency security scanner that reports known vulnerabilities and
+finds upgrade candidates verified against OSV, PyPI metadata and target wheel tags.
 
-## Overview
+**Current scope:** a FastAPI backend MVP. AI-generated explanations, a web
+frontend and persistence are planned; they are not implemented.
 
-AI Secure Software Advisor helps developers analyze project dependencies before deployment. The platform scans dependency versions against known vulnerability data, identifies security risks, recommends safer versions, and uses AI to explain findings and remediation steps.
+[![Backend tests](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml/badge.svg?branch=develop)](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml)
 
-The initial MVP focuses on Python projects using `requirements.txt`.
+## What it does
 
-## MVP Features
+- Scans an entire pinned Python requirements input in one request.
+- Queries OSV, follows pagination and merges records sharing CVE/GHSA/PYSEC aliases.
+- Calculates CVSS v2/v3/v4 scores and collects package-specific fix boundaries.
+- Checks candidate releases for non-yanked PyPI files, Python requirements and wheel compatibility.
+- Searches additional stable PyPI releases when fix-boundary candidates fail.
+- Re-queries OSV before returning an upgrade candidate.
+- Returns structured findings and an auditable candidate-check history.
 
-- Parse and analyze Python `requirements.txt` dependencies
-- Detect known vulnerabilities using the OSV vulnerability database
-- Identify affected dependency versions
-- Recommend safer or fixed package versions
-- Calculate a security risk score based on detected vulnerabilities
-- Generate AI-powered explanations and remediation guidance
-- Store scan history and findings for later review
-- Provide a web dashboard for viewing security reports
+88 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
-## Planned Architecture
+The current MVP is on `develop`; it has not yet been merged into `main`.
+To try it after cloning, run `git switch develop` before following the quick start.
 
-```text
-Next.js Frontend
-       |
-       | REST API
-       v
-FastAPI Backend
-       |
-       +---- Dependency Parser
-       |
-       +---- Vulnerability Scanner ---- OSV API
-       |
-       +---- Risk Scoring Engine
-       |
-       +---- Recommendation Engine
-       |
-       +---- AI Advisor ------------ LLM API
-       |
-       v
-PostgreSQL
-```
+## Quick start
 
-## Tech Stack
+Python 3.11 or 3.12 is recommended (the versions covered by CI).
+Run commands from the repository root. Live scans need access to OSV and PyPI;
+no API keys or database are required.
 
-**Frontend**
-- Next.js
-- TypeScript
-
-**Backend**
-- FastAPI
-- Python
-- Pydantic
-- SQLAlchemy
-
-**Database**
-- PostgreSQL
-
-**Security Intelligence**
-- OSV API
-
-**AI**
-- LLM API for security explanations and remediation guidance
-
-**DevOps**
-- Docker
-- GitHub Actions
-- Automated testing and CI/CD
-
-## MVP Workflow
-
-```text
-requirements.txt
-       ↓
-Dependency Parsing
-       ↓
-Vulnerability Analysis
-       ↓
-Risk Assessment
-       ↓
-Version Recommendation
-       ↓
-AI Explanation
-       ↓
-Security Report
-```
-
-## Project Status
-
-🚧 **Under active development**
-
-Current milestone:
-
-**v0.1 — Python Dependency Security Scanner**
-
-The first version focuses on building the core dependency parsing and vulnerability analysis pipeline before expanding to additional package ecosystems.
-
-## Roadmap
-
-- [ ] Build FastAPI backend foundation
-- [ ] Implement `requirements.txt` parser
-- [ ] Integrate OSV vulnerability scanning
-- [ ] Implement risk scoring
-- [ ] Implement secure version recommendations
-- [ ] Add PostgreSQL persistence
-- [ ] Build Next.js security dashboard
-- [ ] Add AI-generated security explanations
-- [ ] Add automated tests
-- [ ] Containerize services with Docker
-- [ ] Configure GitHub Actions CI/CD
-- [ ] Deploy public demo
-
-### Future
-
-- npm / `package.json` support
-- GitHub repository scanning
-- Additional vulnerability intelligence sources
-- SBOM analysis
-- Docker image analysis
-- Automated pull request recommendations
-
-## Disclaimer
-
-This project provides software security recommendations based on publicly available vulnerability data. It is intended as a developer assistance tool and should not be treated as a replacement for professional security auditing.
-
-## Implemented: batch scan API
-
-`POST /api/v1/scan` scans an entire text input against OSV, one PyPI
-package/version at a time. Existing `/health`, `/api/v1/scan/parse`, and
-single-package vulnerability endpoints remain available.
-
-From the repository root (Python 3.11+):
+### Windows PowerShell
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload
-```
-
-Open http://127.0.0.1:8000/docs, or use PowerShell:
-
-```powershell
-$body = @{ requirements = "requests==2.19.0`nflask==2.0.0`nnumpy==1.21.0" } | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/v1/scan -ContentType 'application/json' -Body $body
-```
-
-Response fields: `total_packages`, `vulnerable_packages`,
-`total_vulnerabilities`, and `results`. Each result has `package`,
-`installed_version`, and `vulnerabilities`; each finding includes its canonical
-ID (preferring CVE), aliases, summary, severity, and `fixed_versions`.
-
-- Counts use unique normalized package names; duplicate identical pins are scanned once.
-- `total_vulnerabilities` sums deduplicated findings per package. A shared CVE
-  affecting two packages counts twice.
-- Blank lines, comments, inline comments, and extras are supported. Only exact
-  `==` versions are accepted. Version ranges, wildcards, markers, URLs, hashes,
-  include files, and conflicting pins return 422 with the offending line.
-  No dependencies are installed and no include files are opened.
-- Empty inputs and more than 100 unique packages return 422; input is limited to
-  100,000 characters. The legacy parse endpoint still skips unsupported lines.
-- OSV pagination is followed. Any upstream HTTP, timeout, or malformed-response
-  failure returns 502 instead of an incomplete clean-looking report.
-- Withdrawn records are omitted; records sharing aliases are merged transitively.
-- Fixed versions come only from matching PyPI package ECOSYSTEM/SEMVER ranges;
-  Git commit hashes are excluded and versions are sorted numerically.
-  These are source-reported fix boundaries across release branches, not a verified
-  safe upgrade recommendation. No release compatibility analysis is performed.
-- Severity uses the highest valid CVSS score when available, falling back to
-  database/ecosystem severity labels; absent data is `UNKNOWN`.
-
-OSV references: https://google.github.io/osv.dev/post-v1-query/ and
-https://ossf.github.io/osv-schema/.
-
-Tests (offline, OSV HTTP responses mocked):
-
-```powershell
-$env:PYTHONPATH = 'backend'
-.\.venv\Scripts\python.exe -m pytest backend/tests -q
-```
-
-Next milestone: calculate CVSS severity and choose upgrade candidates across
-release branches, then add a small CI workflow. Frontend, persistence, and agents
-are outside this milestone.
-
-
-## Implemented: CVSS and upgrade candidates
-
-Each finding now includes `cvss_score`, `cvss_vector`, `cvss_type`, and
-`severity_source`. CVSS v2/v3/v4 vectors are calculated with cvss==3.6.
-The highest valid base score across matching records is used, then explicit
-severity labels are the fallback. Invalid vectors are ignored.
-Library: https://github.com/RedHatProductSecurity/cvss.
-
-Each package now includes `upgrade_recommendation`: `status`,
-`recommended_version`, `checked_versions`, `major_upgrade`, and `reason`.
-Candidates are stable, newer fix boundaries, at or above one reported fix per
-finding; up to five are re-queried against OSV in ascending version order.
-The first candidate with no known OSV findings is returned. This is not proof
-of release availability or compatibility with your Python/application.
-Statuses: `not_needed`, `candidate`, `manual_review`, `verification_failed`.
-Failed candidate checks do not discard the installed-version report.
-
-After updating, install dependencies again and restart the server:
-
-```powershell
-.\.venv-mvp\Scripts\python.exe -m pip install -r backend/requirements.txt
+py -3.12 -m venv .venv-mvp
+.\.venv-mvp\Scripts\python.exe -m pip install -r backend\requirements.txt
 .\.venv-mvp\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload
 ```
 
-Request format and endpoint remain unchanged. This milestone includes 39 offline
-tests. Next: verify candidate release/Python compatibility and add CI.
+If Python 3.12 is not installed, use `py -3.11`. If your environment already
+works, skip environment creation. The `.venv-mvp` directory is ignored by Git.
 
+### Linux / macOS (backend development)
 
-## Implemented: PyPI candidate verification and CI
-
-Optional scan input `target_python` accepts a full Python 3 version:
-
-```json
-{"requirements": "requests==2.19.0\nflask==2.0.0\nnumpy==1.21.0", "target_python": "3.12.0"}
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+.venv/bin/python -m uvicorn app.main:app --app-dir backend --reload
 ```
 
-Every upgrade candidate is checked against the PyPI release JSON API before
-OSV verification. A release must have at least one non-yanked file. With a
-target Python version, at least one non-yanked file must declare a matching
-Requires-Python specifier. Missing/invalid metadata is unknown and cannot
-qualify a candidate when a target is specified. Omitting target_python skips
-this compatibility check (python_compatible=null); the server's Python version
-is never assumed to be the user's target.
+Open [Swagger UI](http://127.0.0.1:8000/docs). The root URL `/` has no route and
+returns 404. The health endpoint is [GET /health](http://127.0.0.1:8000/health).
 
-`upgrade_recommendation.release_checks` records version, status,
-requires_python and python_compatible. Statuses include available, not_found,
-no_files, yanked, python_incompatible and python_unknown. Upstream failures
-return verification_failed while preserving installed-version findings.
-The maximum remains five candidate versions, including rejected releases.
-This checks metadata only, not wheel tags, OS/architecture, transitive
-dependencies, build success or application compatibility. Only source-reported
-fix boundaries are considered, so newer eligible releases may not be explored.
+## Run a scan
 
-GitHub Actions workflow `.github/workflows/backend-tests.yml` runs offline
-tests on Python 3.11 and 3.12 for pushes, pull requests and manual dispatch.
-61 local tests pass; the remote workflow will run after the changes are pushed.
-No secrets or live OSV/PyPI calls are required in tests.
-
-References: https://docs.pypi.org/api/json/ and
-https://docs.github.com/en/actions/tutorials/build-and-test-code/python.
-
-
-## Implemented: CPython wheel compatibility
-
-Optional `target_platform` requires `target_python`. Supported targets:
-`win_amd64`, `win_arm64`, `manylinux_2_17_x86_64`,
-`manylinux_2_17_aarch64`. Linux targets explicitly mean glibc 2.17 and the
-specified CPU; do not use them for Alpine/musl. Conventional CPython only,
-not PyPy or free-threaded CPython.
+In Swagger UI select **POST /api/v1/scan**, click **Try it out**, paste
+[examples/scan-request.json](examples/scan-request.json), and click **Execute**:
 
 ```json
-{"requirements":"requests==2.19.0\nflask==2.0.0\nnumpy==1.21.0","target_python":"3.12.0","target_platform":"win_amd64"}
+{
+  "requirements": "requests==2.19.0\nflask==2.0.0\nnumpy==1.21.0",
+  "target_python": "3.12.0",
+  "target_platform": "win_amd64"
+}
 ```
 
-The same non-yanked wheel must match Python/ABI/platform tags and its
-Requires-Python metadata. Results add `wheel_compatible` and
-`compatible_wheels`. `no_compatible_wheel` rejects a candidate; malformed
-wheel metadata is `wheel_unknown`. Source-only releases require manual review.
-Omitting target_platform preserves metadata-only checks and reports
-wheel_compatible=null. No package is downloaded, installed or built.
-Matching tags do not prove dependency resolution or runtime compatibility.
-Only existing fix-boundary candidates are explored (maximum five); no matching
-candidate is not proof that no compatible newer version exists.
+These deliberately old dependency versions are scan inputs; do not install
+`examples/requirements-vulnerable.txt` as the scanner's dependencies.
 
-CI now uses ubuntu-24.04 and checkout/setup-python v7. It must run on GitHub
-after pushing these changes; local tests: 76 passed.
-References: https://packaging.pypa.io/en/stable/tags.html,
-https://github.com/actions/checkout, https://github.com/actions/setup-python.
+In a second PowerShell terminal:
 
+```powershell
+$body = Get-Content -Raw examples\scan-request.json
+$report = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/v1/scan -ContentType 'application/json' -Body $body
+$report | ConvertTo-Json -Depth 20
+```
 
-## Implemented: expanded stable-release search
+Or with curl on Linux/macOS:
 
-After fix-boundary candidates fail, the remaining verification budget is used
-to search PyPI's JSON Simple Index. Non-yanked files are grouped by normalized
-version; prerelease, development, local, older and below-fix-boundary versions
-are excluded. Requested Python constraints and wheel tags prefilter releases.
-Eligible releases are considered in ascending order to minimize version jumps.
-Already-checked versions are skipped. Release metadata is fetched again before
-OSV verification, so index results alone never qualify a recommendation.
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/scan \
+  -H 'Content-Type: application/json' \
+  --data-binary @examples/scan-request.json
+```
 
-The two stages share five candidate verifications per package. The index is
-queried at most once, only on fallback with budget remaining. It returns file
-metadata only; nothing is downloaded or installed. HTTP calls have 10-second
-timeouts, but there is no whole-scan deadline; OSV may require extra pages.
+## Example result
 
-New fields: `candidate_source` (fix_boundary/pypi_release), `expanded_search`,
-and `release_checks[].remaining_vulnerability_ids`. Null vulnerability IDs
-means no successful OSV check was performed; an empty list means OSV returned
-no findings. Candidate lookup/search errors preserve installed-version findings
-and return verification_failed. Missing fix boundaries still require manual
-review; exceeding the budget does not prove no compatible version exists.
+[examples/scan-report.snapshot.json](examples/scan-report.snapshot.json) is a
+saved live result, not a promise of future counts or recommended versions.
+OSV and PyPI data change. Its original input had three vulnerable packages and
+eight package findings:
 
-API input is unchanged. Test count: 88 passing offline tests.
-Reference: https://docs.pypi.org/api/index-api/.
+| Package | Input version | Findings | Upgrade candidate | How selected |
+|---|---|---:|---|---|
+| requests | 2.19.0 | 5 | 2.33.0 | Fix boundary |
+| flask | 2.0.0 | 2 | 3.1.3 | Fix boundary; major version change |
+| numpy | 1.21.0 | 1 | 1.26.0 | Expanded PyPI search |
+
+NumPy 1.22 was rejected because it had no matching CPython 3.12 / Windows x64
+wheel. The expanded search found 1.26.0, checked its release again, and queried OSV.
+
+## API contract
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Process health; does not test upstream availability |
+| `POST /api/v1/scan` | Complete batch scan; input field is `requirements` |
+| `POST /api/v1/scan/parse` | Legacy parser; input field is `content`, unsupported lines are skipped |
+| `GET /api/v1/scan/vulnerabilities/{package_name}/{version}` | Existing single-package lookup |
+
+Batch input accepts blank lines, comments, inline comments, extras and exact
+`==` pins. Package names and versions are normalized; identical pins are merged.
+Ranges, wildcards, markers, URLs, hashes, include files and conflicting pins are
+rejected. Extras do not trigger extra/transitive dependency discovery.
+
+Limits: 100 unique packages and 100,000 input characters. `target_python` is
+optional and must be a full Python 3 version such as `3.12.0`. `target_platform`
+requires it and supports:
+
+| Target | Meaning |
+|---|---|
+| `win_amd64` | Windows x64 |
+| `win_arm64` | Windows ARM64 |
+| `manylinux_2_17_x86_64` | Linux x64, glibc 2.17 target |
+| `manylinux_2_17_aarch64` | Linux ARM64, glibc 2.17 target |
+
+Linux targets do not describe Alpine/musl. Wheel checking assumes conventional
+CPython, not PyPy or free-threaded CPython. Omitting target fields skips those
+checks; the backend's environment is never assumed to be the scan target.
+
+### Reading the report
+
+- `total_packages`: unique normalized input packages.
+- `vulnerable_packages`: input packages with findings.
+- `total_vulnerabilities`: deduplicated findings summed per package. A CVE
+  affecting two input packages counts twice. These counts describe the input,
+  not the upgrade candidates.
+- Findings include canonical ID, aliases, summary, severity, CVSS evidence and
+  `fixed_versions`. Highest valid CVSS base score is used, with database labels
+  as fallback; absent evidence is `UNKNOWN`. Scores are not a project risk score.
+- `candidate_source`: `fix_boundary` or `pypi_release`.
+- `expanded_search`: whether the fallback index search was attempted.
+- `release_checks`: availability, Python/wheel checks and matching filenames.
+- `remaining_vulnerability_ids`: `null` means no successful OSV check for that
+  candidate; `[]` means OSV returned no findings; IDs explain a rejected candidate.
+
+| Recommendation status | Meaning |
+|---|---|
+| `not_needed` | No known findings for the input version |
+| `candidate` | Requested checks passed; a candidate is available |
+| `manual_review` | Missing fix data or no candidate passed within the budget |
+| `verification_failed` | Candidate verification/search failed; original findings remain |
+
+Batch input errors return 422. Failure scanning an installed version returns
+502. Candidate lookup failures return a report with `verification_failed`.
+
+## How it works
+
+```mermaid
+flowchart TD
+  A[Requirements text] --> B[Parse exact pins]
+  B --> C[OSV query]
+  C --> D[Merge aliases and calculate CVSS]
+  D --> E[Fix-boundary candidates]
+  E --> F[PyPI release and requested compatibility checks]
+  F --> G[OSV candidate verification]
+  F --> H[Fallback PyPI index search]
+  G --> H
+  H --> F
+  G --> I[Structured report]
+```
+
+Fix-boundary candidates are tried first. When they fail and budget remains,
+the PyPI JSON Simple Index is searched once. Stable eligible releases are tried
+in ascending version order; duplicate versions are skipped. Both phases share
+five candidate verifications per package. Index prefiltering does not consume
+that budget. Every selected release is rechecked before its OSV query.
+
+## Test
+
+PowerShell:
+
+```powershell
+$env:PYTHONPATH = 'backend'
+.\.venv-mvp\Scripts\python.exe -m pytest backend\tests -q
+```
+
+Linux/macOS:
+
+```bash
+PYTHONPATH=backend .venv/bin/python -m pytest backend/tests -q
+```
+
+Tests mock upstream responses and run offline. They cover parsing, API behavior,
+alias merging, pagination/failures, CVSS vectors, release states, wheel tags,
+fallback search and the shared candidate budget.
+
+## Repository layout
+
+```text
+backend/
+  app/api/                 HTTP routes
+  app/schemas/             Request and report models
+  app/services/            Parsing, OSV, CVSS, PyPI and recommendations
+  tests/                   Offline tests
+docs/DEMO.zh-TW.md          Five-minute demo guide
+examples/                  Request, input and live report snapshot
+.github/workflows/          CI
+```
+
+## Limitations and next steps
+
+This scanner checks direct pins supplied by the user. It does not resolve a
+dependency graph, discover installed packages, download/build distributions,
+verify cross-package constraints or run application tests. Matching wheel tags
+and no known OSV findings do not prove a working or fully secure installation.
+Missing fix boundaries remain manual review. Exhausting the candidate budget
+does not prove no suitable release exists. Scans run sequentially with HTTP
+timeouts but no whole-scan deadline.
+
+Next milestones:
+
+1. Cross-package dependency constraint checks with explicit target context.
+2. Human-readable remediation summaries; later, grounded AI explanations.
+3. Optional interface and scan history after the core checks are reliable.
+
+See the [Chinese demo guide](docs/DEMO.zh-TW.md) for a presentation walkthrough.
+
+## Branch and release workflow
+
+Commit and push changes to `develop`, then confirm its CI. Open a pull request
+with base `main` and compare `develop`. Review the full diff and wait for PR CI
+before merging. A successful develop run does not mean main has received the MVP.
+After merging, confirm main's workflow and test from that branch. No release tag
+or public deployment is currently claimed.
+
+## Data sources
+
+- [OSV query API](https://google.github.io/osv.dev/post-v1-query/)
+- [OSV schema](https://ossf.github.io/osv-schema/)
+- [PyPI JSON API](https://docs.pypi.org/api/json/)
+- [PyPI Index API](https://docs.pypi.org/api/index-api/)
+- [Packaging tags](https://packaging.pypa.io/en/stable/tags.html)

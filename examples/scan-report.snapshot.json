@@ -1,0 +1,250 @@
+{
+  "total_packages": 3,
+  "vulnerable_packages": 3,
+  "total_vulnerabilities": 8,
+  "results": [
+    {
+      "package": "requests",
+      "installed_version": "2.19.0",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2018-18074",
+          "aliases": [
+            "GHSA-x84v-xcm2-53pg",
+            "PYSEC-2018-28"
+          ],
+          "summary": "Insufficiently Protected Credentials in Requests",
+          "severity": "HIGH",
+          "severity_source": "cvss",
+          "cvss_score": 7.5,
+          "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "2.20.0"
+          ]
+        },
+        {
+          "id": "CVE-2023-32681",
+          "aliases": [
+            "GHSA-j8r2-6x86-q33q",
+            "PYSEC-2023-74"
+          ],
+          "summary": "Unintended leak of Proxy-Authorization header in requests",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 6.1,
+          "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:N/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "2.31.0"
+          ]
+        },
+        {
+          "id": "CVE-2024-35195",
+          "aliases": [
+            "GHSA-9wx4-h78v-vm56",
+            "PYSEC-2026-1873"
+          ],
+          "summary": "Requests `Session` object does not verify requests after making first request with verify=False",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 5.6,
+          "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "2.32.0"
+          ]
+        },
+        {
+          "id": "CVE-2024-47081",
+          "aliases": [
+            "GHSA-9hjg-9r4m-mvj7",
+            "PYSEC-2026-1872"
+          ],
+          "summary": "Requests vulnerable to .netrc credentials leak via malicious URLs",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 5.3,
+          "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "2.32.4"
+          ]
+        },
+        {
+          "id": "CVE-2026-25645",
+          "aliases": [
+            "GHSA-gc5v-m9x4-r6x2",
+            "PYSEC-2026-2275"
+          ],
+          "summary": "Requests has Insecure Temp File Reuse in its extract_zipped_paths() utility function",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 5.5,
+          "cvss_vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "2.33.0"
+          ]
+        }
+      ],
+      "upgrade_recommendation": {
+        "status": "candidate",
+        "candidate_source": "fix_boundary",
+        "expanded_search": false,
+        "recommended_version": "2.33.0",
+        "checked_versions": [
+          "2.33.0"
+        ],
+        "major_upgrade": false,
+        "target_python": "3.12.0",
+        "target_platform": "win_amd64",
+        "release_checks": [
+          {
+            "version": "2.33.0",
+            "status": "available",
+            "requires_python": [
+              ">=3.10"
+            ],
+            "python_compatible": true,
+            "wheel_compatible": true,
+            "remaining_vulnerability_ids": [],
+            "compatible_wheels": [
+              "requests-2.33.0-py3-none-any.whl"
+            ]
+          }
+        ],
+        "reason": "PyPI release and requested compatibility checks passed; OSV reports no known vulnerabilities. Installation, dependency resolution and application compatibility are not verified."
+      }
+    },
+    {
+      "package": "flask",
+      "installed_version": "2.0.0",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2023-30861",
+          "aliases": [
+            "GHSA-m2qf-hxjv-5gpq",
+            "PYSEC-2023-62"
+          ],
+          "summary": "Flask vulnerable to possible disclosure of permanent session cookie due to missing Vary: Cookie header",
+          "severity": "HIGH",
+          "severity_source": "cvss",
+          "cvss_score": 8.7,
+          "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N",
+          "cvss_type": "CVSS_V4",
+          "fixed_versions": [
+            "2.2.5",
+            "2.3.2"
+          ]
+        },
+        {
+          "id": "CVE-2026-27205",
+          "aliases": [
+            "GHSA-68rp-wp8r-4726",
+            "PYSEC-2026-2151"
+          ],
+          "summary": "Flask session does not add `Vary: Cookie` header when accessed in some ways",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 4.3,
+          "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "3.1.3"
+          ]
+        }
+      ],
+      "upgrade_recommendation": {
+        "status": "candidate",
+        "candidate_source": "fix_boundary",
+        "expanded_search": false,
+        "recommended_version": "3.1.3",
+        "checked_versions": [
+          "3.1.3"
+        ],
+        "major_upgrade": true,
+        "target_python": "3.12.0",
+        "target_platform": "win_amd64",
+        "release_checks": [
+          {
+            "version": "3.1.3",
+            "status": "available",
+            "requires_python": [
+              ">=3.9"
+            ],
+            "python_compatible": true,
+            "wheel_compatible": true,
+            "remaining_vulnerability_ids": [],
+            "compatible_wheels": [
+              "flask-3.1.3-py3-none-any.whl"
+            ]
+          }
+        ],
+        "reason": "PyPI release and requested compatibility checks passed; OSV reports no known vulnerabilities. Installation, dependency resolution and application compatibility are not verified."
+      }
+    },
+    {
+      "package": "numpy",
+      "installed_version": "1.21.0",
+      "vulnerabilities": [
+        {
+          "id": "CVE-2021-34141",
+          "aliases": [
+            "GHSA-fpfv-jqm9-f5jm",
+            "PYSEC-2021-855"
+          ],
+          "summary": "Incorrect Comparison in NumPy",
+          "severity": "MEDIUM",
+          "severity_source": "cvss",
+          "cvss_score": 5.3,
+          "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "cvss_type": "CVSS_V3",
+          "fixed_versions": [
+            "1.22"
+          ]
+        }
+      ],
+      "upgrade_recommendation": {
+        "status": "candidate",
+        "candidate_source": "pypi_release",
+        "expanded_search": true,
+        "recommended_version": "1.26.0",
+        "checked_versions": [
+          "1.22",
+          "1.26.0"
+        ],
+        "major_upgrade": false,
+        "target_python": "3.12.0",
+        "target_platform": "win_amd64",
+        "release_checks": [
+          {
+            "version": "1.22",
+            "status": "no_compatible_wheel",
+            "requires_python": [
+              ">=3.8"
+            ],
+            "python_compatible": null,
+            "wheel_compatible": false,
+            "remaining_vulnerability_ids": null,
+            "compatible_wheels": []
+          },
+          {
+            "version": "1.26.0",
+            "status": "available",
+            "requires_python": [
+              "<3.13,>=3.9"
+            ],
+            "python_compatible": true,
+            "wheel_compatible": true,
+            "remaining_vulnerability_ids": [],
+            "compatible_wheels": [
+              "numpy-1.26.0-cp312-cp312-win_amd64.whl"
+            ]
+          }
+        ],
+        "reason": "PyPI release and requested compatibility checks passed; OSV reports no known vulnerabilities. Installation, dependency resolution and application compatibility are not verified."
+      }
+    }
+  ]
+}
