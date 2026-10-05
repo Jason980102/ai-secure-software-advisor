@@ -1,0 +1,4 @@
+# Scan input only; do not install as backend dependencies.
+requests==2.19.0
+flask==2.0.0
+numpy==1.21.0
