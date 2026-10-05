@@ -31,10 +31,13 @@ class ReleaseValidation(BaseModel):
     requires_python: list[str] = Field(default_factory=list)
     python_compatible: bool | None = None
     wheel_compatible: bool | None = None
+    remaining_vulnerability_ids: list[str] | None = None
     compatible_wheels: list[str] = Field(default_factory=list)
 
 class UpgradeRecommendation(BaseModel):
     status: Literal["not_needed", "candidate", "manual_review", "verification_failed"]
+    candidate_source: Literal["fix_boundary", "pypi_release"] | None = None
+    expanded_search: bool = False
     recommended_version: str | None = None
     checked_versions: list[str] = Field(default_factory=list)
     major_upgrade: bool | None = None

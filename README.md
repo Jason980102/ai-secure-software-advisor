@@ -272,3 +272,29 @@ CI now uses ubuntu-24.04 and checkout/setup-python v7. It must run on GitHub
 after pushing these changes; local tests: 76 passed.
 References: https://packaging.pypa.io/en/stable/tags.html,
 https://github.com/actions/checkout, https://github.com/actions/setup-python.
+
+
+## Implemented: expanded stable-release search
+
+After fix-boundary candidates fail, the remaining verification budget is used
+to search PyPI's JSON Simple Index. Non-yanked files are grouped by normalized
+version; prerelease, development, local, older and below-fix-boundary versions
+are excluded. Requested Python constraints and wheel tags prefilter releases.
+Eligible releases are considered in ascending order to minimize version jumps.
+Already-checked versions are skipped. Release metadata is fetched again before
+OSV verification, so index results alone never qualify a recommendation.
+
+The two stages share five candidate verifications per package. The index is
+queried at most once, only on fallback with budget remaining. It returns file
+metadata only; nothing is downloaded or installed. HTTP calls have 10-second
+timeouts, but there is no whole-scan deadline; OSV may require extra pages.
+
+New fields: `candidate_source` (fix_boundary/pypi_release), `expanded_search`,
+and `release_checks[].remaining_vulnerability_ids`. Null vulnerability IDs
+means no successful OSV check was performed; an empty list means OSV returned
+no findings. Candidate lookup/search errors preserve installed-version findings
+and return verification_failed. Missing fix boundaries still require manual
+review; exceeding the budget does not prove no compatible version exists.
+
+API input is unchanged. Test count: 88 passing offline tests.
+Reference: https://docs.pypi.org/api/index-api/.
