@@ -3,8 +3,8 @@
 A Python dependency security scanner that reports known vulnerabilities and
 finds upgrade candidates verified against OSV, PyPI metadata and target wheel tags.
 
-**Current scope:** a FastAPI backend MVP. The scanner now includes a local web interface. AI-generated explanations and
-persistence are planned; they are not implemented.
+**Current scope:** a FastAPI MVP with a five-language web interface, downloadable
+upgrade drafts and optional local Ollama or OpenAI explanations. Persistence is not implemented.
 
 [![Backend tests](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/Jason980102/ai-secure-software-advisor/actions/workflows/backend-tests.yml)
 
@@ -18,7 +18,7 @@ persistence are planned; they are not implemented.
 - Re-queries OSV before returning an upgrade candidate.
 - Returns structured findings and an auditable candidate-check history.
 
-103 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
+136 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
 The first scanner MVP has been merged into `main`, and its CI passed.
 The scanner web interface supports five languages and defaults to English.
@@ -284,9 +284,76 @@ package counts, findings, upgrade candidates, verification evidence and direct
 dependency details. Download JSON exports the successful report. Failed scans
 hide prior results to avoid mistaking an older result for the current request.
 File input reads locally; only requirements text and target options are sent.
-This is a local website, not a public deployment. AI explanations are still absent.
+This is a local website, not a public deployment. AI defaults to a locally installed Ollama model; OpenAI is optional.
 Keep frontend/ next to backend/ when distributing this repo.
 
 ### Explicit extras
 
 Use `requests[socks]==2.33.0` to enable optional direct requirements. Duplicate pins merge normalized extras. Results include an `extras` list. Unselected optional requirements are skipped. This does not propagate extras through the dependency graph or validate that an extra exists in package metadata.
+
+## Proposed upgrade plan and optional AI advice
+
+Every batch scan now includes `upgrade_plan`: original/proposed versions, actions,
+priority from the original findings, warning codes and `requirements_text`.
+Download `requirements.proposed.txt` in the website. The export preserves extras,
+retains pins with no verified candidate and includes review warnings as comments.
+It is a testing draft, not a resolved lockfile or an installation guarantee.
+Dependency conflicts do not silently change pins; resolve them before using the draft.
+
+The website has a beginner guide, optional environment settings and collapsed
+technical evidence. Blank target Python / skipped wheel checks are the defaults;
+choose the actual deployment environment to verify Python and wheels.
+
+### Local Ollama explanations (default)
+
+No OpenAI key is needed. Start Ollama and use the downloaded `qwen3:4b` model.
+The backend only calls `http://127.0.0.1:11434`, without redirects or proxy settings.
+Configure other installed local models using `.env` at the repository root:
+
+```dotenv
+AI_PROVIDER=ollama
+OLLAMA_MODEL=qwen3:4b
+```
+
+If Ollama is not installed, get it from https://ollama.com/download/windows.
+If the model is absent, run `ollama pull qwen3:4b` (downloads several GB).
+There is no automatic download. Cloud tags and remote model metadata are rejected.
+Ollama failures never fall back to OpenAI, even when an OpenAI key exists.
+Local generation does not use OpenAI API credits; it consumes local compute and
+memory. First model loading and CPU inference can be slow; generation times out
+at 180 seconds. The website reports missing models/offline service and offers
+**Check again**. Scanning and draft downloads work independently.
+
+AI is requested explicitly after a scan with **Explain this report with AI**.
+Compact package/version/target/finding-ID evidence is passed to the model;
+raw requirement text, filenames, vulnerability descriptions and free-text reasons
+are excluded. Output uses a JSON schema and is validated against supplied references.
+
+### Optional OpenAI provider
+
+Choose `AI_PROVIDER=openai` explicitly and set `OPENAI_API_KEY` locally.
+`OPENAI_MODEL` defaults to `gpt-4o-mini`, requiring model access. Restart the backend
+when changing configuration. Keys are server-side only and `.env` is ignored by Git.
+This provider uses the Responses API with structured output and `store: false`;
+that disables response storage, not every provider retention mechanism.
+OpenAI API access/billing is separate from scan functionality.
+Process environment variables take precedence over `.env` values.
+Set `AI_PROVIDER=none` to disable all model calls.
+
+`GET /api/v1/scan/advice/config` returns provider, model and availability, never a key.
+`POST /api/v1/scan/advice` accepts `{ "report": <scan report>, "language": "en" }`.
+Supported languages: en, zh-Hant, zh-Hans, ja, es.
+Responses have `generated`, `not_configured` or `unavailable` status and provider/model fields.
+Provider timeout, refusal, incomplete output or unsupported package/finding
+references do not replace the scan or export. Advice uses submitted report data;
+it is not an attestation that the server produced that report. AI prose can be wrong.
+The backend checks package and finding references, but does not prove every prose claim.
+AI does not select versions, edit the plan, execute commands or install packages.
+
+This remains a local MVP. Before public deployment, add authentication and per-user
+AI request limits to control billed access. No database or agent is added.
+
+Official API references: [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create).
+
+Ollama references: [Chat API](https://docs.ollama.com/api/chat), [Structured outputs](https://docs.ollama.com/capabilities/structured-outputs).

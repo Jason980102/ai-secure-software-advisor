@@ -2,6 +2,11 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+
+# Explicit project path works when started from either root or backend.
+# Existing process environment variables take precedence over .env values.
+load_dotenv(Path(__file__).resolve().parents[2] / '.env', override=False)
 
 from app.api.scan import router as scan_router
 
