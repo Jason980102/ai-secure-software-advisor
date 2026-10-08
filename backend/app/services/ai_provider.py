@@ -39,7 +39,7 @@ def request_output(config, instructions, evidence, schema):
             json={'model': config['model'], 'stream': False, 'think': False,
                   'messages': [{'role': 'system', 'content': instructions},
                                {'role': 'user', 'content': json.dumps(evidence)}],
-                  'format': schema, 'options': {'temperature': 0, 'num_ctx': 16384, 'num_predict': 6000}},
+                  'format': schema, 'options': {'temperature': 0, 'num_ctx': 4096, 'num_predict': 6000}},
             timeout=httpx.Timeout(180.0, connect=3.0), trust_env=False)
         response.raise_for_status()
         data = response.json()

@@ -38,13 +38,18 @@ function renderUpgradePlan(report) {
 function renderAdvice(report) {
  const card=node('section',undefined,'card ai-card');card.id='ai-advice';
  card.append(node('h2',t('aiTitle')),node('p',t('aiIntro')));
+ const limits=(report.upgrade_plan?.warnings||[]).filter(code=>['dependency_incomplete','dependency_conflicts','dependencies_not_checked'].includes(code));
+ if(limits.length){const notes=node('ul',undefined,'plan-warnings');for(const code of limits)notes.append(node('li',t(code)));card.append(notes);}
  if(aiConfig.provider==='ollama')card.append(badge(t('aiLocal',{model:aiConfig.model||'Ollama'}),''));
  const result=adviceCache.get(report)?.[language];
  const pending=advicePending.get(report)?.has(language);
  if(result?.status==='generated'){
   card.append(node('p',result.content.summary,'ai-summary'));
   for(const item of result.content.packages){const section=node('div',undefined,'ai-package');
-   section.append(node('h3',item.package),node('p',item.explanation),node('strong',t('testFocus')),node('p',item.test_focus));
+   section.append(node('h3',item.package));
+   const source=report.results.find(p=>p.package===item.package);
+   if(source){section.append(node('small',t('installed',{version:source.installed_version})));const facts=node('ul');for(const finding of source.vulnerabilities)facts.append(node('li',finding.id+' · '+(finding.severity||'UNKNOWN')));section.append(facts);}
+   section.append(node('p',item.explanation),node('strong',t('testFocus')),node('p',item.test_focus));
    if(item.finding_ids.length)section.append(node('small',t('evidenceLabel')+': '+item.finding_ids.join(', ')));
    card.append(section);
   }
