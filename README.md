@@ -18,7 +18,7 @@ upgrade drafts and optional local Ollama or OpenAI explanations. Persistence is 
 - Re-queries OSV before returning an upgrade candidate.
 - Returns structured findings and an auditable candidate-check history.
 
-136 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
+138 offline tests pass locally. GitHub CI runs Python 3.11 and 3.12 on Ubuntu 24.04.
 
 The first scanner MVP has been merged into `main`, and its CI passed.
 The scanner web interface supports five languages and defaults to English.
