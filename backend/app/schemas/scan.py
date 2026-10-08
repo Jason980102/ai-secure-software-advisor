@@ -2,6 +2,7 @@ from typing import Literal
 import re
 from pydantic import BaseModel, Field, field_validator, model_validator
 from app.schemas.vulnerability import VulnerabilityFinding
+from app.schemas.plan import UpgradePlan
 
 TargetPlatform = Literal["win_amd64", "win_arm64", "manylinux_2_17_x86_64", "manylinux_2_17_aarch64"]
 
@@ -72,6 +73,7 @@ class DependencyCheckReport(BaseModel):
     scope: str = "Direct constraints among supplied packages only; not full dependency resolution or installation verification."
 
 class ScanReport(BaseModel):
+    upgrade_plan: UpgradePlan | None = None
     dependency_check: DependencyCheckReport | None = None
     total_packages: int
     vulnerable_packages: int

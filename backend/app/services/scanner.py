@@ -3,6 +3,7 @@ from app.services.recommendation import recommend_upgrade
 from app.schemas.scan import PackageScanResult, ScanReport
 from app.services.dependency_parser import parse_pinned_requirements
 from app.services.osv_service import query_vulnerabilities
+from app.services.upgrade_plan import build_upgrade_plan
 
 def scan_requirements(content: str, target_python: str | None = None, target_platform: str | None = None, check_dependencies: bool = False) -> ScanReport:
     dependencies = parse_pinned_requirements(content)
@@ -13,8 +14,10 @@ def scan_requirements(content: str, target_python: str | None = None, target_pla
             package=d.package, installed_version=d.version, extras=d.extras, vulnerabilities=findings,
             upgrade_recommendation=recommend_upgrade(d.package, d.version, findings, query_vulnerabilities, target_python, target_platform=target_platform),
         ))
+    dependency_check = check_plan(results, target_python, target_platform) if check_dependencies else None
     return ScanReport(
-        dependency_check=check_plan(results, target_python, target_platform) if check_dependencies else None,
+        dependency_check=dependency_check,
+        upgrade_plan=build_upgrade_plan(results, dependency_check),
         total_packages=len(results),
         vulnerable_packages=sum(bool(r.vulnerabilities) for r in results),
         total_vulnerabilities=sum(len(r.vulnerabilities) for r in results),

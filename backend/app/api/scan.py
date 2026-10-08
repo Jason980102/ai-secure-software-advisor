@@ -53,6 +53,22 @@ def get_vulnerabilities(
 from app.schemas.scan import ScanRequest, ScanReport
 from app.services.scanner import scan_requirements
 from app.services.osv_service import OSVServiceError
+from app.schemas.advice import AdviceRequest, AdviceResponse
+from app.services.ai_advice import generate_advice
+from app.services.ai_provider import provider_config
+
+
+@router.get('/advice/config')
+def advice_config():
+    return provider_config()
+
+
+@router.post('/advice', response_model=AdviceResponse)
+def scan_advice(request: AdviceRequest):
+    try:
+        return generate_advice(request.report, request.language)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail='Invalid package or version in report') from exc
 
 @router.post("", response_model=ScanReport)
 def batch_scan(request: ScanRequest) -> ScanReport:
